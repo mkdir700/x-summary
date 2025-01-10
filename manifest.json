@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "X Search Summary",
+  "name": "X Summary",
   "version": "1.0",
-  "description": "使用 GPT 总结 X（原 Twitter）搜索结果",
+  "description": "使用 GPT 总结 X（原 Twitter）推文",
   "permissions": [
     "storage",
     "activeTab",
@@ -20,8 +20,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://x.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     }
   ],
