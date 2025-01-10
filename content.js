@@ -174,97 +174,14 @@ style.textContent = `
   }
 `;
 
-// 预加载管理器
-const PreloadManager = {
-  isLoading: false,
-  lastScrollPosition: 0,
-  loadThreshold: 0.8, // 当滚动到页面 80% 时触发加载
-
-  // 初始化预加载
-  initialize() {
-    window.addEventListener('scroll', this.handleScroll.bind(this));
-    console.log('预加载管理器已初始化');
-  },
-
-  // 处理滚动事件
-  handleScroll() {
-    if (this.isLoading) return;
-
-    const scrollPosition = window.scrollY + window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-    const scrollPercentage = scrollPosition / documentHeight;
-
-    // 如果滚动到阈值位置，开始预加载
-    if (scrollPercentage > this.loadThreshold) {
-      this.preloadNextPage();
-    }
-
-    this.lastScrollPosition = scrollPosition;
-  },
-
-  // 预加载下一页
-  async preloadNextPage() {
-    if (this.isLoading) return;
-
-    try {
-      this.isLoading = true;
-      console.log('开始预加载下一页');
-
-      const currentTweets = document.querySelectorAll('article[data-testid="tweet"]');
-      const lastTweet = currentTweets[currentTweets.length - 1];
-      if (!lastTweet) return;
-
-      // 创建一个隐藏的容器来加载新内容
-      const preloadContainer = document.createElement('div');
-      preloadContainer.style.visibility = 'hidden';
-      preloadContainer.style.position = 'absolute';
-      preloadContainer.style.top = '-9999px';
-      document.body.appendChild(preloadContainer);
-
-      // 复制最后一条推文到隐藏容器
-      const clonedTweet = lastTweet.cloneNode(true);
-      preloadContainer.appendChild(clonedTweet);
-
-      // 触发加载
-      clonedTweet.scrollIntoView({ behavior: 'auto', block: 'end' });
-
-      // 等待新内容加载
-      let attempts = 0;
-      const maxAttempts = 3;
-
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const newTweets = document.querySelectorAll('article[data-testid="tweet"]');
-
-        if (newTweets.length > currentTweets.length) {
-          console.log('预加载成功，新增推文数量:', newTweets.length - currentTweets.length);
-          break;
-        }
-
-        attempts++;
-      }
-
-      // 清理预加载容器
-      document.body.removeChild(preloadContainer);
-
-    } catch (error) {
-      console.error('预加载失败:', error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-};
+// 检查是否已滚动
+function checkIfScrolled() {
+  return window.scrollY > 0;
+}
 
 // 自动加载更多推文
-async function loadMoreTweets(times = null) {
+async function loadMoreTweets(times) {
   console.log('开始自动加载更多推文');
-
-  // 如果没有指定次数，从设置中获取
-  if (times === null) {
-    const settings = await chrome.storage.local.get(['loadTimes']);
-    times = settings.loadTimes || 10;
-  }
-
   console.log(`计划加载 ${times} 次推文`);
 
   const timeline = document.querySelector('[data-testid="primaryColumn"]');
@@ -282,7 +199,7 @@ async function loadMoreTweets(times = null) {
 
     // 获取当前推文数量
     const currentTweets = document.querySelectorAll('article[data-testid="tweet"]');
-    console.log(`当前推文数量: ${currentTweets.length}`);
+    console.log('当前推文数量:', currentTweets.length);
 
     if (currentTweets.length === lastTweetCount) {
       console.log('推文数量未增加，可能已到底或加载失败');
@@ -325,7 +242,13 @@ async function loadMoreTweets(times = null) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  window.scrollTo({ top: 0, behavior: 'auto' });
+  // 只有在非滚动状态下才回到顶部
+  if (!checkIfScrolled()) {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  } else {
+    console.log('页面已滚动，不回到顶部');
+  }
+
   console.log(`自动加载完成，共加载 ${loadCount} 次`);
   return loadCount;
 }
@@ -449,15 +372,12 @@ async function generateSummary(text, apiKey, baseUrl = '', model = 'gpt-4o', cus
 let panel = null;
 let isGeneratingSummary = false;
 
-function initializeSummaryPanel() {
+async function initializeSummaryPanel() {
   console.log('初始化总结面板');
   if (panel) {
     console.log('面板已存在，跳过初始化');
     return;
   }
-
-  // 初始化预加载管理器
-  PreloadManager.initialize();
 
   // 添加样式
   if (!document.head.querySelector('style[data-x-summary]')) {
@@ -466,62 +386,51 @@ function initializeSummaryPanel() {
   }
 
   panel = createSummaryPanel();
-  const button = panel.querySelector('.x-summary-button');
-  const settingsLink = panel.querySelector('.x-summary-settings');
-  const content = panel.querySelector('.x-summary-content');
+  const summaryButton = panel.querySelector('.x-summary-button');
+  const loadingIndicator = panel.querySelector('.x-summary-loading');
 
-  // 点击设置链接
-  settingsLink.addEventListener('click', () => {
-    console.log('点击设置链接');
-    chrome.runtime.sendMessage({ action: 'openSettings' });
-  });
-
-  // 点击总结按钮
-  button.addEventListener('click', async () => {
-    console.log('点击总结按钮');
-    if (isGeneratingSummary) {
-      return;
-    }
-
-    // 检查设置
-    const settings = await chrome.storage.local.get([
-      'openaiApiKey',
-      'openaiBaseUrl',
-      'openaiModel',
-      'customPrompt'
-    ]);
-
-    if (!settings.openaiApiKey) {
-      content.innerHTML = '<div class="x-summary-error">请先在设置页面配置 OpenAI API Key</div>';
-      chrome.runtime.sendMessage({ action: 'openSettings' });
-      return;
-    }
+  summaryButton.addEventListener('click', async () => {
+    if (isGeneratingSummary) return;
+    isGeneratingSummary = true;
+    loadingIndicator.style.display = 'block';
+    summaryButton.disabled = true;
 
     try {
-      isGeneratingSummary = true;
-      button.disabled = true;
-      panel.classList.add('loading');
-      content.textContent = '';
-
-      // 自动加载更多推文
-      content.innerHTML = '<div>正在加载更多推文...</div>';
-      const loadCount = await loadMoreTweets(5);
-      if (loadCount === 0) {
-        throw new Error('无法加载更多推文');
+      if (!checkIfScrolled()) {
+        console.log('尝试自动加载更多推文');
+        // 如果没有指定次数，从设置中获取
+        const settings = await chrome.storage.local.get(['loadTimes']);
+        const times = settings.loadTimes || 10;
+        await loadMoreTweets(times);
+      } else {
+        console.log('用户已滚动页面，直接使用当前页面内容');
       }
 
-      // 提取帖子内容
       const tweets = extractTweets();
       if (!tweets || tweets.length === 0) {
         throw new Error('未找到帖子内容');
       }
 
-      content.innerHTML = '<div>正在生成摘要...</div>';
-
       // 准备发送给 GPT 的文本
       const tweetsText = tweets
         .map(t => `${t.user}: ${t.text}`)
         .join('\n\n');
+
+      // 检查设置
+      const settings = await chrome.storage.local.get([
+        'openaiApiKey',
+        'openaiBaseUrl',
+        'openaiModel',
+        'customPrompt'
+      ]);
+
+      if (!settings.openaiApiKey) {
+        loadingIndicator.style.display = 'none';
+        summaryButton.disabled = false;
+        panel.querySelector('.x-summary-content').innerHTML = '<div class="x-summary-error">请先在设置页面配置 OpenAI API Key</div>';
+        chrome.runtime.sendMessage({ action: 'openSettings' });
+        return;
+      }
 
       // 调用 GPT API
       const summary = await generateSummary(
@@ -533,13 +442,15 @@ function initializeSummaryPanel() {
       );
 
       // 显示结果
-      content.textContent = summary;
+      loadingIndicator.style.display = 'none'; // 加载提示隐藏
+      summaryButton.disabled = false;
+      panel.querySelector('.x-summary-content').textContent = summary;
     } catch (error) {
-      content.innerHTML = `<div class="x-summary-error">错误: ${error.message}</div>`;
+      loadingIndicator.style.display = 'none'; // 加载提示隐藏
+      summaryButton.disabled = false;
+      panel.querySelector('.x-summary-content').innerHTML = `<div class="x-summary-error">错误: ${error.message}</div>`;
     } finally {
       isGeneratingSummary = false;
-      button.disabled = false;
-      panel.classList.remove('loading');
     }
   });
 }
@@ -548,7 +459,6 @@ function initializeSummaryPanel() {
 let isInitialized = false;
 
 function checkAndInitialize() {
-  console.log('检查是否需要初始化');
   if (!isInitialized && document.querySelector('article[data-testid="tweet"]')) {
     console.log('找到推文，开始初始化');
     isInitialized = true;
@@ -561,7 +471,6 @@ checkAndInitialize();
 
 // 设置观察器
 const observer = new MutationObserver((mutations) => {
-  console.log('检测到页面变化');
   checkAndInitialize();
 });
 
