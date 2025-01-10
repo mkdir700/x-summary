@@ -1,10 +1,12 @@
 # 🚀 X Summary Chrome 扩展
 
-> 📝 一键生成 X 推文和搜索结果的智能摘要助手，让信息获取更轻松高效！
+> 📝 一键生成 X 推文和搜索结果的智能摘要助手，快速了解热点话题和重要信息，让阅读更高效！
+
+![演示](./assets/demo-compressed.gif)
 
 ## ✨ 主要特性
 
-- 🎯 一键总结当前搜索页面内容
+- 🎯 一键总结当前页面的内容
 - ⚙️ 支持自定义 OpenAI 接口地址
 - 🎨 简洁优雅的用户界面
 - ⚡ 快速高效的内容处理
@@ -24,27 +26,6 @@
 3. 🌍 输入自定义的 OpenAI 接口地址（可选）
 4. 🖱️ 在 X 推文或搜索结果列表中点击"生成总结"按钮
 5. ✨ 等待处理完成后查看摘要结果
-
-## 🛠️ 项目目录
-
-本扩展基于 Chrome Extension Manifest V3 开发，主要文件结构：
-
-```
-📦 x-summary
- ├── 📄 manifest.json   - 扩展配置文件
- ├── 📄 background.js   - 后台服务脚本
- ├── 📄 content.js      - 内容注入脚本
- ├── 📄 popup.html      - 弹出窗口界面
- ├── 📄 popup.js        - 弹出窗口脚本
- ├── 📄 options.html    - 设置页面界面
- ├── 📄 options.js      - 设置页面脚本
- ├── 📄 generate_icons.py - 图标生成脚本
- └── 📂 icons           - 扩展图标资源
-     ├── 📄 icon.svg    - 原始 SVG 图标
-     ├── 📄 icon16.png  - 16x16 图标
-     ├── 📄 icon48.png  - 48x48 图标
-     └── 📄 icon128.png - 128x128 图标
-```
 
 ## 📝 开源协议
 
