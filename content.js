@@ -41,6 +41,7 @@ Promise.all([
         try {
           isGeneratingSummary = true;
           panelControls.setLoading(true);
+          panelControls.clearContent();
 
           const { baseUrl, model, customPrompt, loadTimes } = await getCustomSettings();
 
@@ -65,8 +66,8 @@ Promise.all([
           // 更新帖子数量显示
           panel.querySelector('.x-summary-count').textContent = `一共 ${count} 条推文`;
 
-          // 生成总结
-          const summary = await generateSummary(
+          // 生成总结（使用流式输出）
+          const summaryGenerator = generateSummary(
             tweets.join('\n\n'),
             apiKey,
             baseUrl,
@@ -74,7 +75,9 @@ Promise.all([
             customPrompt
           );
 
-          panelControls.setContent(summary);
+          for await (const chunk of summaryGenerator) {
+            panelControls.appendContent(chunk);
+          }
         } catch (error) {
           console.error('生成总结时出错:', error);
           panelControls.setError(error.message);

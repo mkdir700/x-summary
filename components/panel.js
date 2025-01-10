@@ -71,6 +71,14 @@ export function initializeSummaryPanel(options = {}) {
       const contentElement = panel.querySelector('.x-summary-content');
       contentElement.textContent = content;
     },
+    appendContent: (content) => {
+      const contentElement = panel.querySelector('.x-summary-content');
+      contentElement.textContent += content;
+    },
+    clearContent: () => {
+      const contentElement = panel.querySelector('.x-summary-content');
+      contentElement.textContent = '';
+    },
     setError: (error) => {
       const contentElement = panel.querySelector('.x-summary-content');
       contentElement.innerHTML = `<div class="x-summary-error">${error}</div>`;

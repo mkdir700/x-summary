@@ -1,5 +1,5 @@
 // 生成总结
-export async function generateSummary(text, apiKey, baseUrl = '', model = 'gpt-4', customPrompt) {
+export async function* generateSummary(text, apiKey, baseUrl = '', model = 'gpt-4', customPrompt) {
   if (!text || !apiKey) {
     throw new Error('缺少必要参数');
   }
@@ -34,7 +34,8 @@ export async function generateSummary(text, apiKey, baseUrl = '', model = 'gpt-4
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1000,
+        stream: true
       })
     });
 
@@ -42,8 +43,35 @@ export async function generateSummary(text, apiKey, baseUrl = '', model = 'gpt-4
       throw new Error('API 请求失败');
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.trim() === '') continue;
+        if (line.trim() === 'data: [DONE]') return;
+
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            const content = data.choices[0]?.delta?.content;
+            if (content) {
+              yield content;
+            }
+          } catch (error) {
+            console.error('解析响应数据时出错:', error);
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error('生成总结时出错:', error);
     throw error;
