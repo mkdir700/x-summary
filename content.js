@@ -53,6 +53,12 @@ style.textContent = `
     gap: 8px;
   }
 
+  .x-summary-count {
+    color: #536471;
+    font-size: 13px;
+    margin-right: 12px;
+  }
+
   .x-summary-settings {
     color: rgb(29, 155, 240);
     text-decoration: none;
@@ -242,13 +248,6 @@ async function loadMoreTweets(times) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  // 只有在非滚动状态下才回到顶部
-  if (!checkIfScrolled()) {
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  } else {
-    console.log('页面已滚动，不回到顶部');
-  }
-
   console.log(`自动加载完成，共加载 ${loadCount} 次`);
   return loadCount;
 }
@@ -262,6 +261,7 @@ function createSummaryPanel() {
     <div class="x-summary-header">
       <h2 class="x-summary-title">X 总结</h2>
       <div class="x-summary-controls">
+        <span class="x-summary-count"></span>
         <a class="x-summary-settings">设置</a>
       </div>
     </div>
@@ -402,6 +402,8 @@ async function initializeSummaryPanel() {
         const settings = await chrome.storage.local.get(['loadTimes']);
         const times = settings.loadTimes || 10;
         await loadMoreTweets(times);
+        // 滚动到顶部
+        window.scrollTo({ top: 0, behavior: 'auto' });
       } else {
         console.log('用户已滚动页面，直接使用当前页面内容');
       }
@@ -410,6 +412,9 @@ async function initializeSummaryPanel() {
       if (!tweets || tweets.length === 0) {
         throw new Error('未找到帖子内容');
       }
+
+      // 更新帖子数量显示
+      panel.querySelector('.x-summary-count').textContent = `已提取 ${tweets.length} 篇帖子`;
 
       // 准备发送给 GPT 的文本
       const tweetsText = tweets
