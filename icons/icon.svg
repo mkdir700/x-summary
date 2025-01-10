@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆 -->
+  <circle cx="64" cy="64" r="60" fill="#1DA1F2"/>
+  
+  <!-- 文本气泡 -->
+  <path d="M94 44c0-2.21-1.79-4-4-4H38c-2.21 0-4 1.79-4 4v28c0 2.21 1.79 4 4 4h10v12l12-12h30c2.21 0 4-1.79 4-4V44z" fill="white"/>
+  
+  <!-- 总结线条 -->
+  <rect x="44" y="52" width="40" height="4" rx="2" fill="#1DA1F2"/>
+  <rect x="44" y="60" width="30" height="4" rx="2" fill="#1DA1F2"/>
+</svg>
