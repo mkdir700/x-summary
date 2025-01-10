@@ -51,12 +51,14 @@ Promise.all([
 
           try {
             isGeneratingSummary = true;
-            panelControls.setLoading(true);
             panelControls.clearContent();
 
             if (!checkIfScrolled()) {
               // 加载更多推文
-              await loadMoreTweets(loadTimes);
+              panelControls.setLoading(true, "正在加载更多推文...");
+              await loadMoreTweets(loadTimes, (current, total) => {
+                panelControls.setLoading(true, `正在加载更多推文... (${current}/${total})`);
+              });
               // 滚动到顶部
               window.scrollTo({ top: 0, behavior: "auto" });
             }
@@ -75,6 +77,7 @@ Promise.all([
             ).textContent = `一共 ${count} 条推文`;
 
             // 生成总结（使用流式输出）
+            panelControls.setLoading(true, "正在生成总结...");
             const summaryGenerator = generateSummary(
               tweets.join("\n\n"),
               apiKey,

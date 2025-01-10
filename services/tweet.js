@@ -4,13 +4,13 @@ export function checkIfScrolled() {
 }
 
 // 自动加载更多推文
-export async function loadMoreTweets(times) {
-  console.log('开始自动加载更多推文');
+export async function loadMoreTweets(times = 5, onProgress) {
+  console.log("开始自动加载更多推文");
   console.log(`计划加载 ${times} 次推文`);
 
   const timeline = document.querySelector('[data-testid="primaryColumn"]');
   if (!timeline) {
-    console.error('未找到推文时间线元素');
+    console.error("未找到推文时间线元素");
     return;
   }
 
@@ -18,24 +18,30 @@ export async function loadMoreTweets(times) {
   let lastTweetCount = 0;
 
   while (loadCount < times) {
-    const currentTweets = timeline.querySelectorAll('[data-testid="tweet"]').length;
+    const currentTweets = timeline.querySelectorAll(
+      '[data-testid="tweet"]'
+    ).length;
 
     if (currentTweets === lastTweetCount) {
-      console.log('没有新推文加载，停止加载');
+      console.log("没有新推文加载，停止加载");
       break;
     }
 
     lastTweetCount = currentTweets;
-    window.scrollTo(0, document.body.scrollHeight);
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
     loadCount++;
 
-    console.log(`已完成第 ${loadCount} 次加载`);
+    if (onProgress) {
+      onProgress(loadCount, times);
+    }
+
+    await new Promise((resolve) => {
+      window.scrollTo(0, document.body.scrollHeight);
+      setTimeout(resolve, 2000);
+    });
   }
 
   window.scrollTo(0, 0);
-  console.log('加载完成');
+  console.log("加载完成");
 }
 
 // 提取推文内容

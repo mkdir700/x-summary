@@ -16,7 +16,10 @@ export function createSummaryPanel() {
       </div>
     </div>
     <button class="x-summary-button">生成总结</button>
-    <div class="x-summary-loading">正在生成总结...</div>
+    <div class="x-summary-loading">
+      <div class="loading-text">正在生成总结...</div>
+      <div class="loading-progress"></div>
+    </div>
     <div class="x-summary-content-wrapper">
       <div class="x-summary-content"></div>
     </div>
@@ -27,15 +30,7 @@ export function createSummaryPanel() {
 }
 
 // 初始化面板和事件监听
-export function initializeSummaryPanel(options = {}) {
-  const {
-    onToggle,
-    onGenerateClick,
-    setTweetCount,
-    initialExpanded,
-    panel
-  } = options;
-
+export function initializeSummaryPanel({ panel, initialExpanded = true, onToggle, onGenerateClick, setTweetCount }) {
   // 切换面板展开/收起
   console.log('initialExpanded', initialExpanded);
   const toggleButton = panel.querySelector('.x-summary-toggle');
@@ -62,26 +57,30 @@ export function initializeSummaryPanel(options = {}) {
     });
   }
 
+  const contentWrapper = panel.querySelector('.x-summary-content-wrapper');
+  const content = panel.querySelector('.x-summary-content');
+  const button = panel.querySelector('.x-summary-button');
+  const loadingText = panel.querySelector('.loading-text');
+
   return {
-    setLoading: (loading) => {
+    setLoading: (loading, text) => {
       panel.classList.toggle('loading', loading);
-      generateButton.disabled = loading;
+      if (text) {
+        loadingText.textContent = text;
+      }
+      button.disabled = loading;
     },
-    setContent: (content) => {
-      const contentElement = panel.querySelector('.x-summary-content');
-      contentElement.textContent = content;
+    setContent: (contentText) => {
+      content.textContent = contentText;
     },
-    appendContent: (content) => {
-      const contentElement = panel.querySelector('.x-summary-content');
-      contentElement.textContent += content;
+    appendContent: (contentText) => {
+      content.textContent += contentText;
     },
     clearContent: () => {
-      const contentElement = panel.querySelector('.x-summary-content');
-      contentElement.textContent = '';
+      content.textContent = '';
     },
     setError: (error) => {
-      const contentElement = panel.querySelector('.x-summary-content');
-      contentElement.innerHTML = `<div class="x-summary-error">${error}</div>`;
+      content.innerHTML = `<div class="x-summary-error">${error}</div>`;
     }
   };
 }
