@@ -16,7 +16,8 @@
   },
   "options_page": "options.html",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -29,6 +30,16 @@
       "run_at": "document_end"
     }
   ],
+  "web_accessible_resources": [{
+    "resources": [
+      "styles/*",
+      "components/*",
+      "services/*",
+      "utils/*",
+      "content.js"
+    ],
+    "matches": ["https://x.com/*"]
+  }],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
